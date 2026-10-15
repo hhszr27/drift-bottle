@@ -1185,7 +1185,9 @@
     function renderThrowTags() {
       const row = document.getElementById("throwTagRow");
       if (!row) return;
-      row.innerHTML = TAG_CONFIG.map((t) => {
+      // 扔瓶子只显示 pickOnly=false 的标签
+      const list = TAG_CONFIG.filter((t) => !t.pickOnly);
+      row.innerHTML = list.map((t) => {
         const active = t.id === selectedTag ? " active" : "";
         const p = t.private ? " private" : "";
         return `<button type="button" class="tag-chip${active}${p}" onclick="selectTag('${t.id}')">${t.emoji} ${t.label}</button>`;
@@ -1201,12 +1203,24 @@
       const row = document.getElementById("pickFilterRow");
       if (!row) return;
       const allActive = pickFilterTag === "" ? " active" : "";
+
+      // 1) 全部
       let html = `<button type="button" class="tag-chip${allActive}" onclick="selectPickFilter('')">全部</button>`;
-      html += TAG_CONFIG.map((t) => {
+
+      // 2) 同城（单独提前，因为它是筛选条件，不是瓶子属性）
+      const samecityTag = TAG_CONFIG.find((t) => t.id === "samecity");
+      if (samecityTag) {
+        const active = pickFilterTag === "samecity" ? " active" : "";
+        html += `<button type="button" class="tag-chip${active}" onclick="selectPickFilter('samecity')">${samecityTag.emoji} ${samecityTag.label}</button>`;
+      }
+
+      // 3) 其他标签（不包含同城，避免重复）
+      html += TAG_CONFIG.filter((t) => t.id !== "samecity").map((t) => {
         const active = t.id === pickFilterTag ? " active" : "";
         const p = t.private ? " private" : "";
         return `<button type="button" class="tag-chip${active}${p}" onclick="selectPickFilter('${t.id}')">${t.emoji} ${t.label}</button>`;
       }).join("");
+
       row.innerHTML = html;
     }
 
@@ -1459,9 +1473,29 @@
       if (blocked.length > 0) {
         params.push(`exclude=${encodeURIComponent(blocked.join(","))}`);
       }
-      if (pickFilterTag) {
+
+      // 同城筛选：需要前端提供自己的城市
+      if (pickFilterTag === "samecity") {
+        const myCity = getMyInfo().city;
+        if (!myCity) {
+          // 没填城市，直接提示，不发请求
+          emptySea.classList.remove("hidden");
+          emptySea.classList.add("error");
+          document.getElementById("emptySeaIcon").textContent = "⚠️";
+          document.getElementById("emptySeaText").textContent = "请先在上方填写你的城市，才能捞同城瓶子";
+          bottleDetail.classList.add("hidden");
+          currentBottleId = null;
+          currentAuthorId = null;
+          if (btn) btn.disabled = false;
+          return;
+        }
+        params.push("samecity=1");
+        params.push(`city=${encodeURIComponent(myCity)}`);
+      } else if (pickFilterTag) {
+        // 普通标签筛选
         params.push(`tag=${encodeURIComponent(pickFilterTag)}`);
       }
+
       const queryStr = params.length > 0 ? `?${params.join("&")}` : "";
 
       const btn = document.querySelector(".btn-pick");
