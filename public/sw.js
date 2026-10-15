@@ -8,19 +8,19 @@ const STATIC_ASSETS = [
   "/icon.svg",
 ];
 
-// 安装：预缓存静态资源
+// Install: pre-cache static assets
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
       cache.addAll(STATIC_ASSETS).catch((e) => {
-        console.log("[SW] 部分资源缓存失败", e);
+        console.log("[SW] cache addAll failed", e);
       })
     )
   );
   self.skipWaiting();
 });
 
-// 激活：清理旧版本缓存
+// Activate: clean old caches
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((names) =>
@@ -34,19 +34,17 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// 请求拦截
+// Fetch handler
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-
-  // 只处理 GET
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
 
-  // 跨域请求（比如 API）直接走网络，不缓存
+  // Cross-origin (API) -> network only
   if (url.origin !== self.location.origin) return;
 
-  // 页面导航：network-first，失败回退缓存
+  // Navigate requests: network-first
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req)
@@ -60,7 +58,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // 其他静态资源：cache-first
+  // Other static assets: cache-first
   event.respondWith(
     caches.match(req).then((cached) => {
       if (cached) return cached;
