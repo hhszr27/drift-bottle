@@ -36,6 +36,22 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "https://91piaoliu.com/screenshot-1.svg",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "漂流瓶首页"
+    },
+    {
+      "src": "https://91piaoliu.com/screenshot-2.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "漂流瓶桌面版"
+    }
+  ],
   "shortcuts": [
     {
       "name": "扔瓶子",
